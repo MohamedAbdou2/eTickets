@@ -1,0 +1,135 @@
+﻿@model ShoppingCartViewModel
+
+@{
+    ViewData["Title"] = "Shopping cart summary";
+}
+
+<div class="row">
+    <div class="col-md-8 offset-2">
+        <div class="text-center">
+            <h2>Your shopping cart summary</h2>
+            <table class="table">
+               <thead>
+                   <tr>
+                        <th>Selected amount</th>
+                        <th>Movie</th>
+                        <th>Price</th>
+                        <th>Subtotal</th>
+                        <th></th>
+                   </tr>
+               </thead>
+               <tbody>
+                    @foreach(var item in Model.ShoppingCart.ShoppingCarttems)
+                    {
+                        <tr>
+                            <td class="align-middle">@item.Amount</td>
+                            <td class="align-middle">@item.Movie.Name</td>
+                            <td class="align-middle">@item.Movie.Price.ToString("c")</td>
+                            <td class="align-middle">@((item.Amount*item.Movie.Price).ToString("c"))</td>
+                            <td class="align-middle">
+                                <a class="text-danger" asp-controller="Orders" asp-action="RemoveItemFromShoppingCart" asp-route-id="@item.Movie.Id">
+                                    <i class="bi bi-cart-dash"></i>
+                                </a>
+                                |
+                                <a class="text-success" asp-controller="Orders" asp-action="AddItemToShoppingCart" asp-route-id="@item.Movie.Id">
+                                    <i class="bi bi-cart-plus"></i>
+                                </a>
+                            </td>
+
+
+
+                        </tr>
+                    }
+                </tbody>
+               <tfooter>
+                   <tr>
+                       <td colspan="2"></td>
+                       <td><b>Total:</b></td>
+                       <td>
+                           @Model.ShoppingCartTotal.ToString("c");
+                       </td>
+                   </tr>
+               </tfooter>
+            </table>
+            <div class="text-center">
+                <div class="btn-group">
+                    @* <a class="btn btn-outline-primary" asp-action="CompleteOrder">
+                        Complete Order
+                    </a> *@
+                    <div id="paypal-btn"></div>
+                   <span class="p-5"></span>
+                    <a class="btn btn-outline-success h-25"  asp-controller="Movies" asp-action="Index">
+                        Add More Items
+                    </a>
+
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@* @section Scripts{
+    <script src="https://www.paypalobjects.com/api/checkout.js"></script>
+    @* <script>
+        paypal.Button.render({
+            //configure environment
+            env: 'sandbox',
+            client: {
+                sandbox: 'ARTzLP7vLDrmBSG-5YAcc1rOtDpR58NW5OR1gQuN282bbcCYLsnlsysS21pZ1-lSIu8nRa6Qk5yr7EZR'
+            },
+            //customize button
+            locale: 'en-US', // corrected locale
+            style: {
+                size: 'small',
+                color: 'gold',
+                shape: 'pill'
+            },
+            commit: true,
+            //set up payment
+            payment: function (data, actions) {
+                console.log("payment setup");
+            },
+            //Execute the payment
+            onAuthorize: function (data, actions) {
+                console.log("payment executed");
+            }
+        }, '#paypal-btn')
+    </script> *@
+
+@section Scripts {
+    <script src="https://www.paypal.com/sdk/js?client-id=ARTzLP7vLDrmBSG-5YAcc1rOtDpR58NW5OR1gQuN282bbcCYLsnlsysS21pZ1-lSIu8nRa6Qk5yr7EZR&currency=USD"></script>
+    <script>
+        paypal.Buttons({
+            createOrder: function (data, actions) {
+                return actions.order.create({
+                    purchase_units: [{
+                        amount: {
+                            value: '@Model.ShoppingCartTotal'
+                        }
+                    }]
+                });
+            },
+            onApprove: function (data, actions) {
+                return actions.order.capture().then(function (details) {
+                    alert('Transaction completed by ' + details.payer.name.given_name);
+                    // Optionally redirect to a success page
+                    window.location.href = '@Url.Action("CompleteOrder", "Orders")';
+                }).catch(function (err) {
+                    console.error('An error occurred during the transaction:', err);
+                    alert('An error occurred during the transaction. Please try again.');
+                });
+            },
+            onCancel: function (data) {
+                alert('Payment cancelled.');
+                // Optionally redirect to a cancellation page
+            },
+            onError: function (err) {
+                console.error('An error occurred during the transaction:', err);
+                alert('An error occurred during the transaction. Please try again.');
+                // Optionally redirect to an error page
+            }
+        }).render('#paypal-btn');
+    </script>
+}
